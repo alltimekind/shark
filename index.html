@@ -1,0 +1,141 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Shark Escape - Fixed Version</title>
+  <style>
+    body { margin: 0; text-align: center; background: #000; }
+    canvas { background: linear-gradient(to bottom, #006994, #00bfff); display: block; margin: auto; }
+    .controls { margin: 10px auto; }
+    .controls button {
+      width: 100px;
+      height: 40px;
+      font-size: 18px;
+      margin: 0 10px;
+      border-radius: 10px;
+    }
+    #startBtn {
+      background: #f9c74f;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h2 style="color:white;">Baby Shark Escape</h2>
+  <canvas id="gameCanvas" width="480" height="640"></canvas>
+  <div class="controls">
+    <button id="startBtn" disabled>Loading...</button><br><br>
+    <button id="upBtn">UP</button>
+    <button id="downBtn">DOWN</button>
+  </div>
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+const sharkImg = new Image();
+sharkImg.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAABuUlEQVRoge2ZMU4DQRBFz2oEDeiM7hScwAQcwARzAAnEAEcwgU+KbrEJ9N7fNvfTy+xZvb1tq7pmUwWIxGIxGIxG4zHjLGVnGHwDrgEE8CeMB74ADxigHwCPgMe9IA34JfCaP3ke57UCeEInBXMEpwFxgP+YzGfSYgYxJvCqcEkYL8AVYCiwcfSfwVqj0/0zCSLOJ8CIwBO4Dk+FsxD8ZLwMwI1xv8Az4GV6EpwF3AB3ANzGpsqKQFl0FbATsCrMLCwCDwCrgWsAH8CpwJWlVhYQCV0F/ImQ58C4ZWI4nUIqj9YBdpWkpSBWgwFdhk8J/BfMu6eRwRZUEEQBEEQBEEQBEEQBEEQ3C38BYZMPsHG3T9MwAAAABJRU5ErkJggg==";
+
+const player = {
+  x: 50,
+  y: canvas.height / 2 - 25,
+  width: 50,
+  height: 50,
+  speed: 5
+};
+
+let obstacles = [];
+let score = 0;
+let gameOver = false;
+let moveUp = false;
+let moveDown = false;
+let obstacleInterval;
+
+function spawnObstacle() {
+  const height = Math.random() * 200 + 50;
+  const y = Math.random() < 0.5 ? 0 : canvas.height - height;
+  obstacles.push({ x: canvas.width, y: y, width: 40, height: height });
+}
+
+function drawPlayer() {
+  ctx.drawImage(sharkImg, player.x, player.y, player.width, player.height);
+}
+
+function drawObstacles() {
+  ctx.fillStyle = "green";
+  obstacles.forEach((obs, i) => {
+    obs.x -= 3;
+    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+    if (obs.x + obs.width < 0) {
+      obstacles.splice(i, 1);
+      score++;
+    }
+  });
+}
+
+function checkCollisions() {
+  for (let obs of obstacles) {
+    if (
+      player.x < obs.x + obs.width &&
+      player.x + player.width > obs.x &&
+      player.y < obs.y + obs.height &&
+      player.y + player.height > obs.y
+    ) {
+      gameOver = true;
+    }
+  }
+}
+
+function drawUI() {
+  ctx.fillStyle = "white";
+  ctx.font = "16px Arial";
+  ctx.fillText("Score: " + score, 10, 20);
+}
+
+function update() {
+  if (moveUp && player.y > 0) player.y -= player.speed;
+  if (moveDown && player.y < canvas.height - player.height) player.y += player.speed;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawPlayer();
+  drawObstacles();
+  drawUI();
+  checkCollisions();
+}
+
+function gameLoop() {
+  if (!gameOver) {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+  } else {
+    clearInterval(obstacleInterval);
+    ctx.fillStyle = "white";
+    ctx.font = "36px Arial";
+    ctx.fillText("Game Over", canvas.width / 2 - 90, canvas.height / 2);
+  }
+}
+
+document.getElementById("upBtn").addEventListener("touchstart", () => moveUp = true);
+document.getElementById("upBtn").addEventListener("touchend", () => moveUp = false);
+document.getElementById("downBtn").addEventListener("touchstart", () => moveDown = true);
+document.getElementById("downBtn").addEventListener("touchend", () => moveDown = false);
+
+sharkImg.onload = () => {
+  const startBtn = document.getElementById("startBtn");
+  startBtn.innerText = "Start";
+  startBtn.disabled = false;
+
+  startBtn.addEventListener("click", () => {
+    score = 0;
+    obstacles = [];
+    gameOver = false;
+    obstacleInterval = setInterval(spawnObstacle, 1500);
+    gameLoop();
+  });
+};
+</script>
+</body>
+</html>
